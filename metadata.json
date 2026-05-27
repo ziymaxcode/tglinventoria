@@ -1,0 +1,6 @@
+{
+  "name": "Inventoria ERP",
+  "description": "A modern inventory management system that uses your personal Google Sheets as a database backend.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
