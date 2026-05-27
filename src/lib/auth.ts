@@ -1,13 +1,7 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, User } from 'firebase/auth';
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import {
-  getAuth,
-  signInWithPopup,
-  GoogleAuthProvider,
-  onAuthStateChanged,
-  User
-} from 'firebase/auth';
+
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -40,10 +34,12 @@ export const initAuth = (
         if (onAuthSuccess) onAuthSuccess(user, cachedAccessToken);
       } else if (!isSigningIn) {
         cachedAccessToken = null;
+        localStorage.removeItem("google_access_token");
         if (onAuthFailure) onAuthFailure();
       }
     } else {
       cachedAccessToken = null;
+      localStorage.removeItem("google_access_token");
       if (onAuthFailure) onAuthFailure();
     }
   });
@@ -59,7 +55,16 @@ export const googleSignIn = async (): Promise<{ user: User; accessToken: string 
     }
 
     cachedAccessToken = credential.accessToken;
-    return { user: result.user, accessToken: cachedAccessToken };
+
+localStorage.setItem(
+  "google_access_token",
+  credential.accessToken
+);
+
+return {
+  user: result.user,
+  accessToken: cachedAccessToken
+};
   } catch (error: any) {
     if (error?.code === 'auth/popup-closed-by-user') {
       console.warn('Sign in popup closed by user');
@@ -73,10 +78,12 @@ export const googleSignIn = async (): Promise<{ user: User; accessToken: string 
 };
 
 export const getAccessToken = async (): Promise<string | null> => {
-  return cachedAccessToken;
+  return localStorage.getItem("google_access_token");
 };
-
 export const logout = async () => {
   await auth.signOut();
+
   cachedAccessToken = null;
+
+  localStorage.removeItem("google_access_token");
 };
