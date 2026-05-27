@@ -193,13 +193,22 @@ apiRouter.get("/search/:spreadsheetId", authenticateToken, async (req: any, res)
       return res.json([]);
     }
 
-    const sheetNames = tabs.split(",");
+    const sheetNames = tabs.split(",").filter((t: string) => t.trim() !== "");
     const sheets = getSheetsClient(req.token);
+
+    // Get actual sheets to avoid querying non-existent ones
+    const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
+    const actualSheetNames = spreadsheet.data.sheets?.map(s => s.properties?.title).filter(Boolean) as string[] || [];
+    const validSheetNames = sheetNames.filter((name: string) => actualSheetNames.includes(name));
+
+    if (validSheetNames.length === 0) {
+      return res.json([]);
+    }
     
-    // Batch get all tabs
+    // Batch get all valid tabs
     const response = await sheets.spreadsheets.values.batchGet({
       spreadsheetId,
-      ranges: sheetNames, // e.g., ["Sensors", "Modules"]
+      ranges: validSheetNames.map(name => `'${name}'`),
     });
 
     const valueRanges = response.data.valueRanges || [];
@@ -211,7 +220,7 @@ apiRouter.get("/search/:spreadsheetId", authenticateToken, async (req: any, res)
        const items = rowsToObjects(rows);
        
        // Inject sheetName / category into each item
-       const sheetName = sheetNames[index];
+       const sheetName = validSheetNames[index];
        items.forEach((item: any) => {
           item._sheetName = sheetName;
           allItems.push(item);
@@ -221,9 +230,10 @@ apiRouter.get("/search/:spreadsheetId", authenticateToken, async (req: any, res)
     const query = q.toLowerCase();
     
     const matchedItems = allItems.filter((item) => {
-      const name = (item.item_name || "").toLowerCase();
-      const code = (item.item_code || "").toLowerCase();
-      const pid = (item.product_id || "").toLowerCase();
+      const name = (item["Item Name"] || item.item_name || "").toLowerCase();
+      const code = (item["Item Code"] || item.item_code || "").toLowerCase();
+      const pid = (item["Product ID"] || item.product_id || "").toLowerCase();
+      const loc = (item["Location"] || item.location || "").toLowerCase();
       
       // Initials of name
       const initials = name.split(/\s+/).map((w: string) => w[0]).join("");
@@ -231,6 +241,7 @@ apiRouter.get("/search/:spreadsheetId", authenticateToken, async (req: any, res)
       return name.includes(query) || 
              code.includes(query) || 
              pid.includes(query) || 
+             loc.includes(query) ||
              initials.includes(query);
     });
 
@@ -238,26 +249,32 @@ apiRouter.get("/search/:spreadsheetId", authenticateToken, async (req: any, res)
     const aggregatedMap: Record<string, any> = {};
 
     matchedItems.forEach(item => {
-       const key = item.product_id || item.item_name || "unknown";
+       const prodId = item["Product ID"] || item.product_id;
+       const itemName = item["Item Name"] || item.item_name;
+       const itemCode = item["Item Code"] || item.item_code;
+       const itemStock = item["Stock"] || item.stock;
+       const itemLocation = item["Location"] || item.location;
+
+       const key = prodId || itemName || "unknown";
        if (!aggregatedMap[key]) {
           aggregatedMap[key] = {
-             product_id: item.product_id,
-             item_code: item.item_code,
-             item_name: item.item_name,
+             product_id: prodId,
+             item_code: itemCode,
+             item_name: itemName,
              total_stock: 0,
              locations: [] as any[],
           };
        }
        
-       const stock = parseInt(item.stock || "0", 10);
+       const stock = parseInt(itemStock || "0", 10);
        if (!isNaN(stock)) {
           aggregatedMap[key].total_stock += stock;
        }
        
        // push location and stock specific to this location
-       if (item.location) {
+       if (itemLocation) {
           aggregatedMap[key].locations.push({
-             name: item.location,
+             name: itemLocation,
              stock: isNaN(stock) ? 0 : stock,
              sheetName: item._sheetName
           });
@@ -425,7 +442,7 @@ async function startServer() {
 }
 
 // Only start the server if we are not being imported (e.g. by Vercel serverless)
-if (require.main === module || process.env.NODE_ENV === "development" || !process.env.VERCEL) {
+if (process.env.NODE_ENV === "development" || !process.env.VERCEL) {
   startServer();
 }
 
