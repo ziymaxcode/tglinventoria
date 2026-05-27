@@ -445,5 +445,5 @@ async function startServer() {
 if (process.env.NODE_ENV === "development" || !process.env.VERCEL) {
   startServer();
 }
-export { apiRouter };
+
 
