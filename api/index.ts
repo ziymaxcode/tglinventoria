@@ -390,6 +390,165 @@ apiRouter.delete(
     }
   }
 );
+apiRouter.get(
+  "/search/:spreadsheetId",
+  authenticateToken,
+  async (req: any, res) => {
+    try {
+      const { spreadsheetId } = req.params;
+      const { q, tabs } = req.query;
+
+      if (!q || typeof q !== "string" || q.trim() === "") {
+        return res.json([]);
+      }
+
+      if (!tabs || typeof tabs !== "string") {
+        return res.json([]);
+      }
+
+      const sheetNames = tabs
+        .split(",")
+        .filter((t: string) => t.trim() !== "");
+
+      const sheets = getSheetsClient(req.token);
+
+      const spreadsheet = await sheets.spreadsheets.get({
+        spreadsheetId,
+      });
+
+      const actualSheetNames =
+        spreadsheet.data.sheets
+          ?.map((s) => s.properties?.title)
+          .filter(Boolean) as string[] || [];
+
+      const validSheetNames = sheetNames.filter((name: string) =>
+        actualSheetNames.includes(name)
+      );
+
+      if (validSheetNames.length === 0) {
+        return res.json([]);
+      }
+
+      const response = await sheets.spreadsheets.values.batchGet({
+        spreadsheetId,
+        ranges: validSheetNames.map((name) => `'${name}'`),
+      });
+
+      const valueRanges = response.data.valueRanges || [];
+
+      let allItems: any[] = [];
+
+      valueRanges.forEach((rangeObj, index) => {
+        const rows = rangeObj.values;
+
+        if (!rows || rows.length === 0) return;
+
+        const items = rowsToObjects(rows);
+
+        const sheetName = validSheetNames[index];
+
+        items.forEach((item: any) => {
+          item._sheetName = sheetName;
+          allItems.push(item);
+        });
+      });
+
+      const query = q.toLowerCase();
+
+      const matchedItems = allItems.filter((item) => {
+        const name = (
+          item["Item Name"] ||
+          item.item_name ||
+          ""
+        ).toLowerCase();
+
+        const code = (
+          item["Item Code"] ||
+          item.item_code ||
+          ""
+        ).toLowerCase();
+
+        const pid = (
+          item["Product ID"] ||
+          item.product_id ||
+          ""
+        ).toLowerCase();
+
+        const loc = (
+          item["Location"] ||
+          item.location ||
+          ""
+        ).toLowerCase();
+
+        const initials = name
+          .split(/\s+/)
+          .map((w: string) => w[0])
+          .join("");
+
+        return (
+          name.includes(query) ||
+          code.includes(query) ||
+          pid.includes(query) ||
+          loc.includes(query) ||
+          initials.includes(query)
+        );
+      });
+
+      const aggregatedMap: Record<string, any> = {};
+
+      matchedItems.forEach((item) => {
+        const prodId =
+          item["Product ID"] || item.product_id;
+
+        const itemName =
+          item["Item Name"] || item.item_name;
+
+        const itemCode =
+          item["Item Code"] || item.item_code;
+
+        const itemStock =
+          item["Stock"] || item.stock;
+
+        const itemLocation =
+          item["Location"] || item.location;
+
+        const key = prodId || itemName || "unknown";
+
+        if (!aggregatedMap[key]) {
+          aggregatedMap[key] = {
+            product_id: prodId,
+            item_code: itemCode,
+            item_name: itemName,
+            total_stock: 0,
+            locations: [],
+          };
+        }
+
+        const stock = parseInt(itemStock || "0", 10);
+
+        if (!isNaN(stock)) {
+          aggregatedMap[key].total_stock += stock;
+        }
+
+        if (itemLocation) {
+          aggregatedMap[key].locations.push({
+            name: itemLocation,
+            stock: isNaN(stock) ? 0 : stock,
+            sheetName: item._sheetName,
+          });
+        }
+      });
+
+      res.json(Object.values(aggregatedMap));
+    } catch (error: any) {
+      console.error(error);
+
+      res.status(500).json({
+        error: error.message,
+      });
+    }
+  }
+);
 
 app.use("/api", apiRouter);
 
