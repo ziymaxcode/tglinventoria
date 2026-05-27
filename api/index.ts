@@ -1,5 +1,5 @@
 import express from 'express';
-import { apiRouter } from '../server'; // Requires the compiled .js or runs natively via Vercel TS compilation depending on settings
+import { apiRouter } from '../api-router'; // Requires the compiled .js or runs natively via Vercel TS compilation depending on settings
 
 const app = express();
 app.use('/api', apiRouter);
