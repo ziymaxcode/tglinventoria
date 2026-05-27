@@ -1,6 +1,5 @@
 import express from "express";
 import path from "path";
-import { createServer as createViteServer } from "vite";
 import { google } from "googleapis";
 
 export const apiRouter = express.Router();
@@ -422,6 +421,7 @@ async function startServer() {
 
   // --- Vite Middleware for Development ---
   if (process.env.NODE_ENV !== "production") {
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
