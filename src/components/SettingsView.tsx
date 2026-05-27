@@ -102,7 +102,14 @@ export default function SettingsView({
             <div className="flex space-x-2">
                <Input 
                  value={spreadsheetId}
-                 onChange={(e) => setSpreadsheetId(e.target.value)}
+                 onChange={(e) => {
+                   let val = e.target.value;
+                   const match = val.match(/\/d\/([a-zA-Z0-9-_]+)/);
+                   if (match && match[1]) {
+                     val = match[1];
+                   }
+                   setSpreadsheetId(val);
+                 }}
                  placeholder="e.g. 1BxiMVs0XRYFgwnTE..." 
                  className="max-w-md"
                />
