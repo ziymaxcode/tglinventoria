@@ -338,13 +338,18 @@ export default function App() {
       <aside className="w-60 border-r bg-slate-900 border-slate-800 flex-shrink-0 md:flex flex-col hidden print:hidden">
         <div className="p-6 border-b border-slate-800">
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-3">
-            <img
-              src="/tglinventoria.png"
-              alt="TGL Inventoria"
-              className="h-10 w-auto object-contain"
-            />
-          </div>
+            <div className="flex items-center justify-center w-full">
+              <img
+                src="/tglinventoria.png"
+                alt="TGL Inventoria"
+                className="
+                  object-contain
+                  w-[140px]
+                  md:w-[180px]
+                  h-auto
+                "
+              />
+            </div>
           </div>
         </div>
         
@@ -378,11 +383,16 @@ export default function App() {
               </SheetTrigger>
               <SheetContent side="left" className="w-[300px] p-0 flex flex-col bg-slate-900 border-r border-slate-800">
                 <div className="p-6 border-b border-slate-800 flex items-center gap-2">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center w-full">
                   <img
                     src="/tglinventoria.png"
                     alt="TGL Inventoria"
-                    className="h-10 w-auto object-contain"
+                    className="
+                      object-contain
+                      w-[140px]
+                      md:w-[180px]
+                      h-auto
+                    "
                   />
                 </div>
                 </div>
