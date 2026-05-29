@@ -31,7 +31,10 @@ export default function App() {
 
   const [activeTab, setActiveTab] = useState("Dashboard");
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
-  const [spreadsheetId, setSpreadsheetId] = useState<string>(localStorage.getItem(SPREADSHEET_ID_KEY) || "");
+  const defaultSpreadsheetId = import.meta.env.VITE_SPREADSHEET_ID;
+  console.log("ENV ID:", import.meta.env.VITE_SPREADSHEET_ID);
+console.log("Current ID:", defaultSpreadsheetId);
+  const [spreadsheetId, setSpreadsheetId] = useState<string>(defaultSpreadsheetId);
   const [dynamicTabs, setDynamicTabs] = useState<string[]>(DEFAULT_PRODUCT_TABS);
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -338,18 +341,10 @@ export default function App() {
       <aside className="w-60 border-r bg-slate-900 border-slate-800 flex-shrink-0 md:flex flex-col hidden print:hidden">
         <div className="p-6 border-b border-slate-800">
           <div className="flex items-center gap-2">
-            <div className="flex items-center justify-center w-full">
-              <img
-                src="/tglinventoria.png"
-                alt="TGL Inventoria"
-                className="
-                  object-contain
-                  w-[140px]
-                  md:w-[180px]
-                  h-auto
-                "
-              />
+            <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center">
+              <Package className="w-5 h-5 text-white" />
             </div>
+            <span className="font-bold text-white tracking-tight text-lg">Inventoria</span>
           </div>
         </div>
         
@@ -383,18 +378,10 @@ export default function App() {
               </SheetTrigger>
               <SheetContent side="left" className="w-[300px] p-0 flex flex-col bg-slate-900 border-r border-slate-800">
                 <div className="p-6 border-b border-slate-800 flex items-center gap-2">
-                  <div className="flex items-center justify-center w-full">
-                  <img
-                    src="/tglinventoria.png"
-                    alt="TGL Inventoria"
-                    className="
-                      object-contain
-                      w-[140px]
-                      md:w-[180px]
-                      h-auto
-                    "
-                  />
-                </div>
+                  <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center">
+                    <Package className="w-5 h-5 text-white" />
+                  </div>
+                  <span className="font-bold text-white tracking-tight text-lg">Inventoria</span>
                 </div>
                 <nav className="flex-1 overflow-y-auto p-3 space-y-1">
                   {renderNavItems()}
